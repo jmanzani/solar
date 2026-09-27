@@ -25,11 +25,10 @@ git -C "$SRC_CACHE" fetch --depth 1 origin "$COMMIT" 2>/dev/null || git -C "$SRC
 git -C "$SRC_CACHE" checkout "$COMMIT" 2>/dev/null || git -C "$SRC_CACHE" checkout "4cd1038" 2>/dev/null \
     || die "cannot checkout XposedInstaller $COMMIT"
 
-# Fix FileUtils.setPermissions issue in ModuleUtil.java (missing method in XposedInstaller source)
-MODULE_UTIL="$SRC_CACHE/de/robv/android/xposed/installer/util/ModuleUtil.java"
-if [ -f "$MODULE_UTIL" ]; then
-    # Replace FileUtils.setPermissions with direct file permission methods
-    sed -i 's/FileUtils\.setPermissions(MODULES_LIST_FILE, 00664, -1, -1);/try { java.io.File f = new java.io.File(MODULES_LIST_FILE); f.setReadable(true, false); f.setWritable(true, false); f.setReadable(true, true); f.setWritable(true, true); f.setReadable(true, true); } catch (Exception e) { /* ignore */ }/' "$MODULE_UTIL"
+# Fix FileUtils.setPermissions issue (missing method in XposedInstaller source)
+if [ -d "$SRC_CACHE/de/robv/android/xposed/installer" ]; then
+    find "$SRC_CACHE/de/robv/android/xposed/installer" -name '*.java' -exec \
+        sed -i 's/FileUtils\.setPermissions(\([^,]*\), \([^,]*\), -1, -1);/try { java.io.File f = new java.io.File(\1); f.setReadable(true, false); f.setWritable(true, false); f.setReadable(true, true); f.setWritable(true, true); f.setReadable(true, true); } catch (Exception e) { \/\* ignore \*\/ }/' {} +
 fi
 
 rm -rf "$BUILD_DIR"
