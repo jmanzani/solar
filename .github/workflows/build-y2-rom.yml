@@ -1,0 +1,87 @@
+name: Build Y2 ROM
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * *'  # Daily build at 2 AM UTC
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  build-y2-rom:
+    name: Build Y2 ROM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build release APK
+        run: |
+          echo "Building release APK..."
+          ./gradlew assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk .
+          echo "APK built successfully!"
+
+      - name: Build Y2 ROM
+        run: |
+          echo "Building Y2 ROM..."
+          
+          # Build using solar-rom/scripts/build-rom.sh (Solar ROM assembler)
+          # This script does loop-mounting of system/userdata images, requires root
+          # It downloads the Y2 base, strips Solar, installs Solar APK, and produces rom_y2.zip
+          
+          sudo bash solar-rom/scripts/build-rom.sh y2 \
+            --apk app-release.apk \
+            solar-rom/dist/rom_y2.zip
+
+      - name: Verify ROM was built
+        run: |
+          echo "Checking if ROM was built..."
+          if [ -f "solar-rom/dist/rom_y2.zip" ]; then
+            echo "Y2 ROM built successfully!"
+            unzip -l solar-rom/dist/rom_y2.zip | head -20
+          else
+            echo "ERROR: ROM build failed!"
+            exit 1
+          fi
+
+      - name: Upload Y2 ROM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: y2-rom
+          path: solar-rom/dist/rom_y2.zip
+          retention-days: 1
+
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          release_name: "Solar Y2 ROM v$(date +'%Y%m%d-%H%M')"
+          body: |
+            Automatically generated Y2 ROM for Innioasis Y2 device.
+            
+            ## Build Details
+            - Type: Y2 ATA (MT6582)
+            - Base: Solar Y2 pack stripped of Solar artefacts, JJ launcher installed
+            - Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+            - Commit: $(git rev-parse HEAD)
+          draft: false
+          prerelease: false
+          files:
+            - solar-rom/dist/rom_y2.zip
+          labels:
+            - "rom"
+            - "y2"
+            - "innioasis"
+            - "solar"
+            - "build"
