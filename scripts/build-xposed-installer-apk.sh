@@ -43,14 +43,13 @@ if [ -d "$INSTALLER_OVERRIDES" ]; then
     echo "==> applied Solar Xposed Installer overrides"
 fi
 
-# Platform android.jar for API 19 (KitKat) — fallback to highest installed.
-PLATFORM=""
-for p in "$ANDROID_HOME/platforms/android-19/android.jar" \
-         "$ANDROID_HOME/platforms/android-21/android.jar" \
-         "$ANDROID_HOME/platforms/android-34/android.jar"; do
-    [ -f "$p" ] && PLATFORM="$p" && break
-done
-[ -n "$PLATFORM" ] || die "install platforms;android-19 via sdkmanager"
+# Platform android.jar for API 19 (KitKat) — required, no fallback.
+# This legacy installer calls hidden KitKat APIs (e.g. FileUtils.setPermissions)
+# that don't exist in newer platform stubs, so silently falling back to a newer
+# API level (e.g. android-34) produces confusing "cannot find symbol" errors
+# instead of a clear message. Fail fast if android-19 isn't installed.
+PLATFORM="$ANDROID_HOME/platforms/android-19/android.jar"
+[ -f "$PLATFORM" ] || die "install platforms;android-19 via sdkmanager (this legacy installer requires the API 19 stubs; newer platforms are missing hidden APIs it depends on)"
 
 echo "==> aapt package (platform $(basename "$(dirname "$PLATFORM")"))"
 "$BT/aapt" package -f -M "$BUILD_DIR/AndroidManifest.xml" \
