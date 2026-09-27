@@ -65,14 +65,21 @@ jobs:
           path: solar-rom/dist/rom_y2.zip
           retention-days: 1
 
+      - name: Set release metadata
+        id: meta
+        run: |
+          echo "build_time=$(date +%Y%m%d-%H%M)" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          release_name: "Solar Y2 ROM v$(date +%Y%m%d-%H%M)"
-          body: "Solar Y2 ROM for Innioasis Y2 (MT6582 ATA). Built from $(git rev-parse --short HEAD)."
+          tag_name: y2-release
+          name: "Solar Y2 ROM v${{ steps.meta.outputs.build_time }}"
+          body: "Solar Y2 ROM for Innioasis Y2 (MT6582 ATA). Built from ${{ steps.meta.outputs.short_sha }}."
           draft: false
           prerelease: false
           files: solar-rom/dist/rom_y2.zip
