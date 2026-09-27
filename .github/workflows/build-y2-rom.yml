@@ -34,7 +34,7 @@ jobs:
       - name: Build Y2 ROM
         run: |
           echo "Building Innioasis Y2 ROM..."
-          sudo bash solar-rom/scripts/build-rom.sh y2 \
+          sudo SKIP_ROCKBOX_XPOSED=1 bash solar-rom/scripts/build-rom.sh y2 \
             --apk app-release.apk \
             solar-rom/dist/rom_y2.zip
 
