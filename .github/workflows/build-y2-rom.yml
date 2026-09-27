@@ -11,6 +11,8 @@ jobs:
   build-y2-rom:
     name: Build Y2 ROM
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
