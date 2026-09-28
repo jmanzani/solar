@@ -195,6 +195,11 @@ xposed_theme_font_apk() {
 # Resolve or build SolarRockboxIme.apk (Y1 + Y2).
 xposed_rockbox_ime_apk() {
     local script_dir="${1:?script dir}"
+    # Skip if requested (e.g., when Rockbox is stripped from ROM)
+    if [ "${SKIP_ROCKBOX_XPOSED:-}" = "1" ]; then
+        echo "skip"
+        return 0
+    fi
     local out="$script_dir/../vendor/xposed/solar-rockbox-ime/SolarRockboxIme.apk"
     if [ -f "$out" ]; then
         echo "$out"
@@ -211,6 +216,11 @@ xposed_rockbox_ime_apk() {
 # Resolve or build SolarRockboxCompat.apk (Y2 only).
 xposed_rockbox_compat_apk() {
     local script_dir="${1:?script dir}"
+    # Skip if requested (e.g., when Rockbox is stripped from ROM)
+    if [ "${SKIP_ROCKBOX_XPOSED:-}" = "1" ]; then
+        echo "skip"
+        return 0
+    fi
     local out="$script_dir/../vendor/xposed/solar-rockbox-compat/SolarRockboxCompat.apk"
     if [ -f "$out" ]; then
         echo "$out"
@@ -293,6 +303,30 @@ xposed_install_to_mount() {
     theme_apk="$(xposed_theme_font_apk "$script_dir")" || return 1
     echo "==> Xposed: install Solar theme font module (API $api_level)"
     sudo install -m 644 -o root -g root "$theme_apk" "$mount/app/SolarThemeFont.apk"
+
+    local rockbox_ime_apk
+    if [ "${SKIP_ROCKBOX_XPOSED:-}" = "1" ]; then
+        rockbox_ime_apk="skip"
+    else
+        rockbox_ime_apk="$(xposed_rockbox_ime_apk "$script_dir")" || return 1
+    fi
+    if [ "$rockbox_ime_apk" != "skip" ]; then
+        echo "==> Xposed: install Solar Rockbox IME module (API $api_level)"
+        sudo install -m 644 -o root -g root "$rockbox_ime_apk" "$mount/app/SolarRockboxIme.apk"
+    fi
+
+    if [ "$api_level" != "17" ] && [ "$api_level" != "18" ]; then
+        if [ "${SKIP_ROCKBOX_XPOSED:-}" = "1" ]; then
+            sudo rm -f "$mount/app/SolarRockboxCompat.apk"
+        else
+            local rockbox_compat_apk
+            rockbox_compat_apk="$(xposed_rockbox_compat_apk "$script_dir")" || return 1
+            echo "==> Xposed: install Solar Rockbox compat module (API $api_level)"
+            sudo install -m 644 -o root -g root "$rockbox_compat_apk" "$mount/app/SolarRockboxCompat.apk"
+        fi
+    else
+        sudo rm -f "$mount/app/SolarRockboxCompat.apk"
+    fi
 
     local notpipe_bridge_apk
     notpipe_bridge_apk="$(xposed_notpipe_bridge_apk "$script_dir")" || return 1

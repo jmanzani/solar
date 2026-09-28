@@ -1722,9 +1722,11 @@ if [ ! -f "$SCRIPT_DIR/../vendor/xposed/XposedInstaller.apk" ]; then
     chmod +x "$SCRIPT_DIR/build-xposed-installer-apk.sh"
     "$SCRIPT_DIR/build-xposed-installer-apk.sh"
 fi
-echo "==> Install Xposed framework (API $XPOSED_API) — required for a, b, y2, and a5 ROM zips"
-chmod +x "$SCRIPT_DIR/install-xposed-system.sh"
-sudo "$SCRIPT_DIR/install-xposed-system.sh" "$MOUNT_SYS" "$XPOSED_API"
+if [ "$TYPE" != "y2" ]; then
+    echo "==> Install Xposed framework (API $XPOSED_API) — required for a, b, a5 ROM zips"
+    chmod +x "$SCRIPT_DIR/install-xposed-system.sh"
+    sudo "$SCRIPT_DIR/install-xposed-system.sh" "$MOUNT_SYS" "$XPOSED_API"
+fi
 install_notpipe_system "$MOUNT_SYS"
 install_launcher_helper_system "$MOUNT_SYS"
 

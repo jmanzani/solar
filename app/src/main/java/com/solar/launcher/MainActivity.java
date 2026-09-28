@@ -5013,6 +5013,7 @@ public class MainActivity extends Activity {
                 applyThemedStatusIcon(ivStatusHeadphone, "headsetWithMic", "headsetWithoutMic",
                         R.drawable.ic_headphone, 0xFF00FFFF);
             }
+            BluetoothAdapterCompat.repairIfPoisoned();
             BluetoothAdapter ba = BluetoothAdapter.getDefaultAdapter();
             if (ba != null && ba.isEnabled()) {
                 ivStatusBluetooth.setVisibility(View.VISIBLE);
@@ -24982,7 +24983,9 @@ if (OverlayKeyGate.isOverlayNavigationKey(code) || Y1InputKeys.isBackKey(code)) 
                 try {
                     ok = ba.enable();
                 } catch (Exception ignored) {}
-                if (!ok) {
+                if (ok) {
+                    BluetoothAdapterCompat.repairIfPoisoned(); // heal immediately after radio comes up
+                } else {
                     Runtime.getRuntime().exec(new String[] {
                             "su", "-c", "settings put global bluetooth_on 1"
                     });
